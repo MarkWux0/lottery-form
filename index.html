@@ -403,26 +403,27 @@ async function submit(){
   };
 
   try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycbxsSbk-0XvO9LXs_wFmQMBrpfjoG8NBlXrwRZgrGhnVyhE5PP9UbclBXRkpyJwqrthvzQ/exec", {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbzVM22IWGPMm5qPXo9q94ihEdRU0JhdgJNrDTXqn59oPLtKvEJkMYq4YP0ikwDdv45buA/exec", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const json = await res.json();
+    const text = await res.text();
 
-    if(json.success){
+    if(text === "OK"){
       showMsg("ok", "✅ 已送出！祝你中獎～");
       selected3 = new Set();
       selectedS = null;
       syncUI();
     }else{
-      showMsg("bad", "送出失敗，請稍後再試");
+      showMsg("bad", "送出失敗：" + text);
     }
+
   } catch(e){
     showMsg("bad", "連線失敗，請檢查網路");
   }
 }
+
 
   // init
   renderChips(pick3El, (n)=>onPick3(n));
