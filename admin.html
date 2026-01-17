@@ -51,6 +51,32 @@ details.prize-top table{
   border-radius: 10px;
   overflow: hidden;
 }
+.ball{
+  width:54px;height:54px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.ball.spin{
+  animation: pop .35s ease-in-out infinite alternate;
+}
+@keyframes pop{
+  from{ transform: translateY(0) scale(1); }
+  to  { transform: translateY(-6px) scale(1.05); }
+}
+
+.fade-in{
+  opacity:0;
+  transform: translateY(6px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.fade-in.show{
+  opacity:1;
+  transform: translateY(0);
+}
   </style>
 </head>
 <body>
@@ -83,15 +109,26 @@ details.prize-top table{
           <input id="ds" placeholder="例如：5" />
         </div>
         <div class="btns">
-          <button class="primary" id="calc">立即算獎</button>
-          <button class="ghost" id="export">匯出中獎CSV</button>
-        </div>
+  <button class="primary" id="calc">🎬 開獎</button>
+  <button class="ghost" id="draw">🎲 隨機開獎</button>
+  <button class="ghost" id="export">匯出中獎CSV</button>
+</div>
         <div id="calcMsg" class="msg"></div>
         <div class="muted" id="summary">尚未算獎。</div>
       </div>
     </div>
+	
+	<div id="drawStage" style="display:none;margin:12px 0 16px 0">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="ball" id="ball1">?</div>
+    <div class="ball" id="ball2">?</div>
+    <div class="ball" id="ball3">?</div>
+    <div style="margin-left:8px;font-weight:900">開獎中…</div>
+  </div>
+</div>
 
-    <div class="card">
+
+    <div id="resultStage" class="fade-in">
       <h3 style="margin:0 0 10px 0">③ 結果列表</h3>
       <div style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:14px">
         <table>
@@ -122,7 +159,6 @@ details.prize-top table{
     const API_URL = "https://script.google.com/macros/s/AKfycbwEr1iH4Nm5SpZwY1sIR2NQ4NQUIcq6ZsT-kcp_OxOkXbCdZBJ6jvKtYFxJ9zCyMseJzQ/exec";
     // ============================================
     const $ = s => document.querySelector(s);
-    const apiUrlEl = $("#apiUrl");
     const loadMsgEl = $("#loadMsg");
     const calcMsgEl = $("#calcMsg");
     const countInfoEl = $("#countInfo");
@@ -152,6 +188,21 @@ details.prize-top table{
 	}
 
     function valid1to7(n){ return Number.isInteger(n) && n>=1 && n<=7; }
+	
+	function randomUnique3(){
+  const arr = [1,2,3,4,5,6,7];
+  // 洗牌取前三
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0,3).sort((a,b)=>a-b);
+}
+
+function setDrawInputs(d3, ds){
+  $("#d3").value = d3.join(" ");
+  $("#ds").value = String(ds);
+}
 
     function calcPrize(entry, draw3, drawS){
       const pickSet = new Set(entry.pick3);
@@ -167,6 +218,54 @@ details.prize-top table{
       if(!specialHit && hit===1) return {name:"樂透普獎", amount:100,  key:"F"};
       return null;
     }
+function playDrawAnimationAndRender(finalNums){
+  // finalNums: [n1,n2,n3] 最終開獎三碼
+  const stage = document.getElementById('drawStage');
+  const rstage = document.getElementById('resultStage'); // 如果你沒有包 resultStage，可以略過這兩行並改用 tbodyEl
+  const b1 = document.getElementById('ball1');
+  const b2 = document.getElementById('ball2');
+  const b3 = document.getElementById('ball3');
+
+  // 顯示動畫、先把結果淡出
+  if(stage) stage.style.display = '';
+  if(rstage){ rstage.classList.remove('show'); }
+
+  // 滾動：每 80ms 亂跳一次（1~7）
+  const balls = [b1,b2,b3].filter(Boolean);
+  balls.forEach(b => b.classList.add('spin'));
+
+  const tick = () => String(1 + Math.floor(Math.random()*7));
+  const timer = setInterval(()=>{
+    if(b1) b1.textContent = tick();
+    if(b2) b2.textContent = tick();
+    if(b3) b3.textContent = tick();
+  }, 80);
+
+  // 依序停球（更有「開獎感」）
+  setTimeout(()=>{ if(b1){ b1.textContent = String(finalNums[0]); b1.classList.remove('spin'); } }, 900);
+  setTimeout(()=>{ if(b2){ b2.textContent = String(finalNums[1]); b2.classList.remove('spin'); } }, 1500);
+  setTimeout(()=>{ if(b3){ b3.textContent = String(finalNums[2]); b3.classList.remove('spin'); } }, 2100);
+
+  // 最後停止 timer、渲染結果、淡入
+  setTimeout(()=>{
+    clearInterval(timer);
+
+    // ✅ 這裡呼叫你原本算獎 + renderResults 的流程
+    // 如果你原本是 runCalc() 內算好 winners 再 renderResults()，就把那兩行留在 runCalc()
+    renderResults();
+
+    // 動畫舞台收起（可選）
+    if(stage) stage.style.display = 'none';
+
+    // 結果淡入
+    if(rstage){
+      requestAnimationFrame(()=> rstage.classList.add('show'));
+    } else {
+      // 若你沒有 resultStage，就用 tbodyEl 所在 table 自己加 class 控淡入也行
+    }
+  }, 2400);
+}
+
 
 function renderResults(){
   if(!winners.length){
@@ -278,7 +377,7 @@ return `
       }
     }
 
-    function runCalc(){
+    function runCalc(withAnimation = true){
       clearMsg(calcMsgEl);
       if(!entries.length){
         showMsg(calcMsgEl, "bad", "請先載入名單（從 Sheet）");
@@ -334,7 +433,11 @@ return `
       `;
 
       showMsg(calcMsgEl, "ok", "算獎完成");
-      renderResults();
+      if(withAnimation){
+    playDrawAnimationAndRender(d3);
+  } else {
+    renderResults();
+  }
     }
 
     function exportWinners(){
@@ -369,7 +472,14 @@ return `
     }
 
     $("#load").addEventListener("click", loadEntries);
-    $("#calc").addEventListener("click", runCalc);
+    $("#calc").addEventListener("click", ()=> runCalc(true));
+	$("#draw").addEventListener("click", ()=>{
+  // 隨機產生三碼（不重複）+ 特別號（可重複）
+  const d3 = randomUnique3();
+  const ds = 1 + Math.floor(Math.random()*7);
+  setDrawInputs(d3, ds);
+  runCalc(true); // 直接跑動畫 + 中獎名單
+});
     $("#export").addEventListener("click", exportWinners);
     $("#clearCache").addEventListener("click", ()=>{
       entries = [];
