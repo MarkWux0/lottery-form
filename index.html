@@ -305,7 +305,6 @@
   }
   function setEntries(list){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    updateCount();
   }
 
   function showMsg(type, text){
@@ -426,7 +425,6 @@ async function submit(){
   // init
   renderChips(pick3El, (n)=>onPick3(n));
   renderChips(pickSEl, (n)=>onPickS(n));
-  updateCount();
   syncUI();
 
   $("#submit").addEventListener("click", submit);
@@ -517,7 +515,6 @@ async function submit(){
   function clearAll(){
     if(!confirm("確定要清空所有資料？此動作無法復原。")) return;
     localStorage.removeItem(STORAGE_KEY);
-    updateCount();
     renderAdminTable();
     alert("已清空。");
   }
@@ -540,6 +537,7 @@ async function submit(){
 </script>
 </body>
 </html>
+
 
 
 
