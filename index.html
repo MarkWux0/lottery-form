@@ -109,11 +109,43 @@
     .btn.primary:hover{filter:brightness(1.05)}
     .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
     .btn.warn{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--bad)}
-    .msg{
-      margin-top:10px;padding:10px 12px;border-radius:12px;font-weight:700;display:none;
-    }
-    .msg.ok{display:block;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);color:var(--ok)}
-    .msg.bad{display:block;background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.25);color:var(--bad)}
+    .msg { 
+  display:none;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid transparent;
+  background: #fff;
+}
+
+.msg.ok {
+  display:block;
+  border-color: rgba(46, 204, 113, .35);
+  background: rgba(46, 204, 113, .12);
+  color: #1f6f43;
+}
+
+.msg.bad {
+  display:block;
+  border-color: rgba(231, 76, 60, .35);
+  background: rgba(231, 76, 60, .12);
+  color: #8b2e25;
+}
+
+.msg.info {
+  display:block;
+  border-color: rgba(52, 152, 219, .35);
+  background: rgba(52, 152, 219, .12);
+  color: #1d4f7a;
+}
+
+.msg small {
+  opacity: .7;
+  word-break: break-all;
+}
+
     .sideList{
       margin-top:8px;border-top:1px dashed rgba(229,231,235,.9);
       padding-top:10px;color:var(--muted);font-size:13px;line-height:1.5;
@@ -576,4 +608,5 @@ if (text === "OK") {
 </script>
 </body>
 </html>
+
 
