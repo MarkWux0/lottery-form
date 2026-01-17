@@ -77,6 +77,9 @@ details.prize-top table{
   opacity:1;
   transform: translateY(0);
 }
+.manual-draw {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -99,17 +102,18 @@ details.prize-top table{
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 10px 0">② 輸入中獎號碼</h3>
-        <div class="row">
-          <label>開獎三碼</label>
-          <input id="d3" placeholder="例如：1 2 3（用空白或逗號分隔）" />
-        </div>
-        <div class="row">
-          <label>特別號</label>
-          <input id="ds" placeholder="例如：5" />
-        </div>
-        <div class="btns">
-  <button class="primary" id="calc">🎬 開獎</button>
+        <<div class="manual-draw">
+    <h3 style="margin:0 0 10px 0">② 輸入中獎號碼</h3>
+    <div class="row">
+      <label>開獎三碼</label>
+      <input id="d3" placeholder="例如：1 2 3（用空白或逗號分隔）" />
+    </div>
+    <div class="row">
+      <label>特別號</label>
+      <input id="ds" placeholder="例如：5" />
+    </div>
+    <button class="primary" id="calc">🎬 開獎</button>
+  </div>
   <button class="ghost" id="draw">🎲 隨機開獎</button>
   <button class="ghost" id="export">匯出中獎CSV</button>
 </div>
@@ -123,7 +127,7 @@ details.prize-top table{
     <div class="ball" id="ball1">?</div>
     <div class="ball" id="ball2">?</div>
     <div class="ball" id="ball3">?</div>
-    <div style="margin-left:8px;font-weight:900">開獎中…</div>
+    <div id="drawLabel" style="margin-left:8px;font-weight:900">開獎中…</div>
   </div>
 </div>
 
@@ -248,22 +252,28 @@ function playDrawAnimationAndRender(finalNums){
 
   // 最後停止 timer、渲染結果、淡入
   setTimeout(()=>{
-    clearInterval(timer);
+  clearInterval(timer);
 
-    // ✅ 這裡呼叫你原本算獎 + renderResults 的流程
-    // 如果你原本是 runCalc() 內算好 winners 再 renderResults()，就把那兩行留在 runCalc()
-    renderResults();
+  // ✅ 這裡保留最後數字（其實前面已經逐顆停球了，這裡確保一次）
+  if(b1) b1.textContent = String(finalNums[0]);
+  if(b2) b2.textContent = String(finalNums[1]);
+  if(b3) b3.textContent = String(finalNums[2]);
 
-    // 動畫舞台收起（可選）
-    if(stage) stage.style.display = 'none';
+  // ✅ 不要把 drawStage 隱藏（留在頁面上）
+  // if(stage) stage.style.display = 'none';
 
-    // 結果淡入
-    if(rstage){
-      requestAnimationFrame(()=> rstage.classList.add('show'));
-    } else {
-      // 若你沒有 resultStage，就用 tbodyEl 所在 table 自己加 class 控淡入也行
-    }
-  }, 2400);
+  // ✅ 把提示文字改成「開獎結果」
+  const label = document.getElementById('drawLabel');
+  if(label) label.textContent = '開獎結果';
+
+  // ✅ 渲染名單（你原本就有 winners 了）
+  renderResults();
+
+  // ✅ 名單淡入
+  if(rstage){
+    requestAnimationFrame(()=> rstage.classList.add('show'));
+  }
+}, 2400);
 }
 
 
