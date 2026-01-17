@@ -32,6 +32,25 @@
     .pill b{color:#b45309}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media (max-width:880px){.grid{grid-template-columns:1fr}}
+	/* 頭獎高亮（summary） */
+details.prize-top > summary{
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 10px 12px;
+  list-style: none;
+}
+details.prize-top > summary::-webkit-details-marker{ display:none; }
+details.prize-top > summary::before{
+  content: "🏆 ";
+}
+
+/* 頭獎展開內容也高亮 */
+details.prize-top table{
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  overflow: hidden;
+}
   </style>
 </head>
 <body>
@@ -149,25 +168,76 @@
       return null;
     }
 
-    function renderResults(){
-      if(!winners.length){
-        tbodyEl.innerHTML = `<tr><td colspan="6" class="muted">本次無人中獎。</td></tr>`;
-        return;
-      }
-      tbodyEl.innerHTML = winners.map((w, i) => `
-        <tr>
-          <td>${i+1}</td>
-          <td><strong>${escapeHtml(w.name)}</strong></td>
-          <td>
-            <span class="pill">三碼：<b>${w.pick3.join(" ")}</b></span>
-            <span class="pill">特別：<b>${w.special}</b></span>
-          </td>
-          <td>${escapeHtml(w.prize)}</td>
-          <td><strong>NTD ${Number(w.amount).toLocaleString()}</strong></td>
-          <td class="muted">${escapeHtml(String(w.time||""))}</td>
-        </tr>
-      `).join("");
-    }
+function renderResults(){
+  if(!winners.length){
+    tbodyEl.innerHTML = `<tr><td colspan="6" class="muted">本次無人中獎。</td></tr>`;
+    return;
+  }
+
+  // 依獎項分組
+  const groups = {};
+  for(const w of winners){
+    if(!groups[w.prize]) groups[w.prize] = [];
+    groups[w.prize].push(w);
+  }
+
+  // 獎項顯示順序
+  const prizeOrder = [
+    "樂透頭獎",
+    "樂透貳獎",
+    "樂透參獎",
+    "樂透肆獎",
+    "樂透伍獎",
+    "樂透普獎"
+  ];
+
+  // 清空原本 table
+  tbodyEl.innerHTML = `
+    <tr>
+      <td colspan="6" style="padding:0">
+        ${prizeOrder.map(prize => {
+          const list = groups[prize];
+          if(!list || list.length === 0) return "";
+
+          const isTop = (prize === prizeOrder[0]); // prizeOrder[0] = 頭獎那個字串
+return `
+  <details class="${isTop ? 'prize-top' : ''}" style="border-bottom:1px solid #e5e7eb;padding:10px">
+    <summary style="cursor:pointer;font-weight:900">
+      ${prize}（${list.length} 人｜$${list[0].amount.toLocaleString()}）
+    </summary>
+
+              <table style="width:100%;margin-top:8px;font-size:14px">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>姓名</th>
+                    <th>下注</th>
+                    <th>獎金</th>
+                    <th>時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${list.map((w,i)=>`
+                    <tr>
+                      <td>${i+1}</td>
+                      <td><strong>${escapeHtml(w.name)}</strong></td>
+                      <td>
+                        三碼 ${w.pick3.join(" ")} ｜ 特 ${w.special}
+                      </td>
+                      <td><strong>NTD ${w.amount.toLocaleString()}</strong></td>
+                      <td class="muted">${escapeHtml(w.time || "")}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </details>
+          `;
+        }).join("")}
+      </td>
+    </tr>
+  `;
+}
+
 
     function escapeHtml(str){
       return String(str).replace(/[&<>"']/g, s => ({
@@ -312,10 +382,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
