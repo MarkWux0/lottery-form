@@ -352,33 +352,34 @@ async function drainQueue() {
     }
   } finally {
     SENDING = false;
-    // 清空提示（或你要保留最後結果也行）
+	if (QUEUE.length === 0) {
+    // 不要強制清空，讓 submit() 的成功/失敗訊息保留
     // setMsg("", "");
+  }
   }
 }
 
 /** 實際 POST（沿用你現有 API_URL） */
 async function postToApi(payloadObj) {
-  // 這裡請用你原本的 API_URL 常數
   const API_URL = "https://script.google.com/macros/s/AKfycbx65FW5onjucjP1alsHPSU9ziE5I8es9bzfdFECEmsQA7fCciWPv0kVxAiOT3uK13T4mw/exec";
-  if (typeof API_URL === "undefined") {
-    throw new Error("API_URL 未定義，請確認 index.html 有設定 API_URL");
-  }
+
+  // ✅ 用表單格式（Simple Request）避免 CORS preflight
+  const body = new URLSearchParams();
+  Object.entries(payloadObj).forEach(([k, v]) => {
+    if (Array.isArray(v)) body.set(k, v.join(","));  // pick3 -> "1,2,3"
+    else body.set(k, String(v));
+  });
 
   const resp = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify(payloadObj),
-    // Apps Script 有時候會卡 cache，這個可加可不加
+    // ⚠️ 不要加 headers（尤其 Content-Type），避免觸發 OPTIONS
+    body,
     cache: "no-store",
   });
 
   const text = (await resp.text()).trim();
-  if (!resp.ok) {
-    // 例如 500
-    throw new Error(`HTTP ${resp.status}: ${text || "NO_BODY"}`);
-  }
-  return text; // 可能是 OK / DUPLICATE|... / ERROR:...
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text || "NO_BODY"}`);
+  return text; // OK / DUPLICATE|... / ERROR:...
 }
 
   // ====== 設定區（你可以改）======
@@ -508,7 +509,7 @@ async function submit() {
   const payload = {
     name,
     pick3: [...selected3].sort((a,b)=>a-b),
-    special: selectedS,
+    special: String(selectedS),
     test: false  // 壓測才改 true
   };
 
