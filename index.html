@@ -382,7 +382,13 @@
   }
 
   function validate(){
-    const name = nameEl.value.trim();
+    const name = nameEl.value.replace(/\s+/g, "").trim();
+    nameEl.value = name;
+    const chineseNameRegex = /^[\u4E00-\u9FFF]+$/;
+    if(!chineseNameRegex.test(name)){
+      showMsg("bad", "姓名僅限中文，請勿輸入空白或其他符號");
+      return;
+    }
     if(!name) return {ok:false, msg:"請先填寫姓名。"};
     if(selected3.size !== PICK_THREE) return {ok:false, msg:`請選滿三碼（目前 ${selected3.size} 碼）。`};
     if(selectedS == null) return {ok:false, msg:"請選一個特別號。"};
@@ -403,7 +409,7 @@ async function submit(){
   };
 
   try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycbx5GRqyn16yyGvpaMpoms02PCsS2ttPc7-8-knFmjXwiBWHdvw0yNv6IC5UpClZLqyi8Q/exec", {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbzgF9PjPYrg5hNgi-zVL0FcM7BSLMIQddHP330ZkMS6-o5K6cbumTk7l_av6tK1_IkH9w/exec", {
       method: "POST",
       body: JSON.stringify(payload)
     });
@@ -411,10 +417,11 @@ async function submit(){
     const text = await res.text();
 
     if(text === "OK"){
-      showMsg("ok", "✅ 已送出！祝你中獎～");
-      selected3 = new Set();
-      selectedS = null;
-      syncUI();
+      showMsg("ok", "✅ 已送出！");
+    }else if(text === "DUPLICATE"){
+      showMsg("bad", "⚠️ 你已經報名過了（同姓名不可重複）");
+    }else if(text === "ERROR:NAME_ONLY_CHINESE"){
+      showMsg("bad", "姓名僅限中文，請重新輸入");
     }else{
       showMsg("bad", "送出失敗：" + text);
     }
@@ -542,5 +549,6 @@ async function submit(){
 </script>
 </body>
 </html>
+
 
 
