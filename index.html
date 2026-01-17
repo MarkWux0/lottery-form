@@ -307,9 +307,6 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     updateCount();
   }
-  function updateCount(){
-    countEl.textContent = String(getEntries().length);
-  }
 
   function showMsg(type, text){
     msgEl.className = "msg " + (type === "ok" ? "ok" : "bad");
@@ -543,6 +540,7 @@ async function submit(){
 </script>
 </body>
 </html>
+
 
 
 
