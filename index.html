@@ -300,6 +300,87 @@
 </dialog>
 
 <script>
+
+const QUEUE = [];
+let SENDING = false;
+
+// 可調：每筆成功/失敗後，下一筆前的間隔（ms）
+const QUEUE_GAP_MS = 450;
+
+// 取得 msg 元素（你說訊息框就是 msg）
+function setMsg(text, type) {
+  const el = document.getElementById("msg");
+  if (!el) return;
+  el.textContent = text || "";
+  el.className = "msg " + (type || "");
+  el.style.display = text ? "block" : "none";
+}
+
+function updateQueueHint() {
+  if (SENDING || QUEUE.length > 0) setMsg("排隊送出中…請稍候", "info");
+}
+
+// 把資料丟進佇列
+function enqueueSubmit(payloadObj) {
+  return new Promise((resolve, reject) => {
+    QUEUE.push({ payloadObj, resolve, reject });
+    updateQueueHint();
+    drainQueue(); // 觸發處理
+  });
+}
+
+// 逐筆送出（一次只送 1 筆）
+async function drainQueue() {
+  if (SENDING) return;
+  if (QUEUE.length === 0) return;
+
+  SENDING = true;
+  try {
+    while (QUEUE.length > 0) {
+      const job = QUEUE.shift();
+      updateQueueHint();
+
+      try {
+        const resultText = await postToApi(job.payloadObj); // 送到 Apps Script
+        job.resolve(resultText);
+      } catch (err) {
+        job.reject(err);
+      }
+
+      // 每筆之間留一點 gap，讓 Apps Script / Sheet 鎖釋放
+      await new Promise(r => setTimeout(r, QUEUE_GAP_MS));
+    }
+  } finally {
+    SENDING = false;
+    // 清空提示（或你要保留最後結果也行）
+    // setMsg("", "");
+  }
+}
+
+/** 實際 POST（沿用你現有 API_URL） */
+async function postToApi(payloadObj) {
+  // 這裡請用你原本的 API_URL 常數
+  const API_URL = "https://script.google.com/macros/s/AKfycbx65FW5onjucjP1alsHPSU9ziE5I8es9bzfdFECEmsQA7fCciWPv0kVxAiOT3uK13T4mw/exec";
+  if (typeof API_URL === "undefined") {
+    throw new Error("API_URL 未定義，請確認 index.html 有設定 API_URL");
+  }
+
+  const resp = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(payloadObj),
+    // Apps Script 有時候會卡 cache，這個可加可不加
+    cache: "no-store",
+  });
+
+  const text = (await resp.text()).trim();
+  if (!resp.ok) {
+    // 例如 500
+    throw new Error(`HTTP ${resp.status}: ${text || "NO_BODY"}`);
+  }
+  return text; // 可能是 OK / DUPLICATE|... / ERROR:...
+}
+
   // ====== 設定區（你可以改）======
   const NUM_MIN = 1;
   const NUM_MAX = 7;
@@ -314,7 +395,6 @@
   const pickSEl = $("#pickS");
   const nameEl  = $("#name");
   const msgEl   = $("#msg");
-  const countEl = $("#count");
   const cur3El  = $("#cur3");
   const curSEl  = $("#curS");
 
@@ -348,16 +428,13 @@
   box.style.display = "block";
 }
 
-function clearMsg() {
-  const box = document.getElementById("msg");
-  if (!box) return;
-  box.innerHTML = "";
-  box.style.display = "none";
-}
   function clearMsg(){
-    msgEl.className = "msg";
-    msgEl.textContent = "";
-  }
+  const el = document.getElementById("msg");
+  if (!el) return;
+  el.className = "msg";
+  el.textContent = "";
+  el.style.display = "none";
+}
 
   function renderChips(container, onClick){
     container.innerHTML = "";
@@ -414,83 +491,59 @@ function clearMsg() {
     syncUI();
   }
 
-  function validate(){
-    const name = nameEl.value.replace(/\s+/g, "").trim();
-    nameEl.value = name;
-    const chineseNameRegex = /^[\u4E00-\u9FFF]+$/;
-    if(!chineseNameRegex.test(name)){
-      showMsg("bad", "姓名僅限中文，請勿輸入空白或其他符號");
-      return;
-    }
-    if(!name) return {ok:false, msg:"請先填寫姓名。"};
-    if(selected3.size !== PICK_THREE) return {ok:false, msg:`請選滿三碼（目前 ${selected3.size} 碼）。`};
-    if(selectedS == null) return {ok:false, msg:"請選一個特別號。"};
-    return {ok:true};
-  }
+async function submit() {
+  clearMsg();
 
-async function submit(){
-  const v = validate();
-  if(!v.ok){
-    showMsg("bad", v.msg);
-    return;
-  }
+  // 1) 驗證
+  const name = nameEl.value.replace(/\s+/g, "").trim();
+  nameEl.value = name;
 
+  const chineseNameRegex = /^[\u4E00-\u9FFF]+$/;
+  if (!name) return setMsg("請先填寫姓名（中文全名）。", "bad");
+  if (!chineseNameRegex.test(name)) return setMsg("姓名僅限中文（不可空白/英文/符號）。", "bad");
+  if (selected3.size !== PICK_THREE) return setMsg(`請選滿三碼（目前 ${selected3.size} 碼）。`, "bad");
+  if (selectedS == null) return setMsg("請選一個特別號。", "bad");
+
+  // 2) 組 payload（三碼要排序，避免 2 5 6 / 6 2 5 被當成不同）
   const payload = {
-    name: nameEl.value.trim(),
+    name,
     pick3: [...selected3].sort((a,b)=>a-b),
-    special: selectedS
+    special: selectedS,
+    test: false  // 壓測才改 true
   };
 
+  // 3) 排隊送出（單機爆量會變成逐筆送）
+  setSubmitEnabled(false);
+  setMsg("已加入佇列，準備送出…", "info");
+
   try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycbx65FW5onjucjP1alsHPSU9ziE5I8es9bzfdFECEmsQA7fCciWPv0kVxAiOT3uK13T4mw/exec", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+    const resultText = await enqueueSubmit(payload);
 
-    const text = (await res.text()).trim();
-
-// 送出按鈕防連點（請把 submitBtn 改成你的送出按鈕元素變數/ID）
-const submitBtn = document.getElementById("btnSubmit"); // 若你的按鈕 id 不同就改
-if (submitBtn) submitBtn.disabled = false;
-
-if (text === "OK") {
-  showMsg(
-    "ok",
-    `✅ <b>報名成功</b><br>
-     你已完成填寫，祝你好運！`
-  );
-
-} else if (text.startsWith("DUPLICATE|")) {
-  // 格式：DUPLICATE|n1|n2|n3|sp
-  const parts = text.split("|");
-  const n1 = parts[1], n2 = parts[2], n3 = parts[3], sp = parts[4];
-
-  showMsg(
-    "bad",
-    `✅ <b>你已完成報名</b>（同姓名不可重複）<br>
-     📌 你之前填的是：<b>${n1}、${n2}、${n3}</b>（特別號：<b>${sp}</b>）<br>
-     若有問題請洽工作人員`
-  );
-
-} else if (text === "ERROR:NAME_ONLY_CHINESE") {
-  showMsg(
-    "bad",
-    `⚠️ 姓名僅限<b>中文</b>，請重新輸入`
-  );
-
-} else {
-  showMsg(
-    "bad",
-    `⚠️ 送出未完成，請稍後再試<br>
-     （若持續失敗請洽工作人員）`
-  );
-}
-
-
-  } catch(e){
-    showMsg("bad", "⚠️ 連線失敗，請檢查網路或洽工作人員");
+    if (resultText === "OK") {
+      setMsg("送出成功 ✅", "ok");
+      // 成功後要不要清空看你：通常不清空，讓他看到自己選了什麼
+      // resetAll();
+    } else if (resultText.startsWith("DUPLICATE")) {
+      setMsg("你已經報名過囉（同名不可重複）。如需更改請找主辦協助。", "bad");
+    } else if (resultText.includes("NAME_ONLY_CHINESE")) {
+      setMsg("姓名需為中文（不可含空格/英文/符號）。", "bad");
+    } else {
+      setMsg("送出失敗：" + resultText, "bad");
+    }
+  } catch (e) {
+    setMsg("送出失敗（網路/後端忙碌）： " + (e?.message || e), "bad");
+  } finally {
+    setSubmitEnabled(true);
   }
 }
+
+function setSubmitEnabled(enabled){
+  const btn = document.getElementById("submit");
+  const reset = document.getElementById("reset");
+  if (btn) btn.disabled = !enabled;
+  if (reset) reset.disabled = !enabled; // 建議一起鎖，避免送出中又改選號碼
+}
+
 
 
   // init
@@ -608,6 +661,3 @@ if (text === "OK") {
 </script>
 </body>
 </html>
-
-
-
