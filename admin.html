@@ -132,12 +132,6 @@
   		return { d3, ds };
 	}
 
-      const d3 = parseNums($("#d3").value).slice(0,3);
-      const dsArr = parseNums($("#ds").value);
-      const ds = dsArr[0];
-      return { d3, ds };
-    }
-
     function valid1to7(n){ return Number.isInteger(n) && n>=1 && n<=7; }
 
     function calcPrize(entry, draw3, drawS){
