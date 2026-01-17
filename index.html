@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>轉盤大樂透｜填寫頁</title>
+  <style>
+    :root{
+      --bg:#fff7ea;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --brand:#b91c1c;
+      --gold:#f59e0b;
+      --line:#e5e7eb;
+      --ok:#16a34a;
+      --bad:#dc2626;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, #fff1d6 0%, var(--bg) 40%, #fffaf0 100%);
+      color:var(--text);
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:20px}
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+    .title h1{margin:0;font-size:28px;letter-spacing:.5px}
+    .badge{
+      font-size:12px;color:#7c2d12;background:#ffedd5;border:1px solid #fed7aa;
+      padding:4px 10px;border-radius:999px;
+    }
+    .adminBtn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.7);
+      backdrop-filter: blur(6px);
+      padding:10px 12px;border-radius:999px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width:880px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background:var(--card);
+      border:1px solid rgba(229,231,235,.9);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 18px;
+      background: linear-gradient(90deg, rgba(185,28,28,.12), rgba(245,158,11,.12));
+      border-bottom:1px solid rgba(229,231,235,.9);
+    }
+    .card .hd h2{margin:0;font-size:18px;}
+    .card .bd{padding:18px}
+    .row{display:grid;grid-template-columns: 120px 1fr;gap:10px;align-items:center;margin:12px 0}
+    @media (max-width:520px){ .row{grid-template-columns:1fr} }
+    label{font-weight:700}
+    input[type="text"]{
+      width:100%;
+      padding:12px 12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      font-size:16px;
+      outline:none;
+    }
+    input[type="text"]:focus{border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+    .nums{
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0,1fr));
+      gap:8px;
+    }
+    .chip{
+      user-select:none;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 0;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s transform, .15s background, .15s border;
+      background:#fff;
+    }
+    .chip:hover{transform: translateY(-1px)}
+    .chip.active{
+      background: rgba(245,158,11,.18);
+      border-color: rgba(245,158,11,.55);
+      box-shadow: inset 0 0 0 1px rgba(245,158,11,.35);
+    }
+    .chip.disabled{ opacity:.45; cursor:not-allowed; }
+    .hint{color:var(--muted);font-size:13px;line-height:1.45;margin-top:6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+    .btn{
+      border:0;border-radius:12px;padding:12px 14px;cursor:pointer;font-weight:800;font-size:15px;
+    }
+    .btn.primary{background:var(--brand);color:#fff}
+    .btn.primary:hover{filter:brightness(1.05)}
+    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .btn.warn{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--bad)}
+    .msg{
+      margin-top:10px;padding:10px 12px;border-radius:12px;font-weight:700;display:none;
+    }
+    .msg.ok{display:block;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);color:var(--ok)}
+    .msg.bad{display:block;background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.25);color:var(--bad)}
+    .sideList{
+      margin-top:8px;border-top:1px dashed rgba(229,231,235,.9);
+      padding-top:10px;color:var(--muted);font-size:13px;line-height:1.5;
+    }
+    .kvs{display:grid;grid-template-columns: 1fr auto;gap:10px;margin:6px 0}
+    .kvs code{background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 6px;border-radius:8px}
+    dialog{
+      width:min(980px, calc(100% - 24px));
+      border:1px solid rgba(229,231,235,.95);
+      border-radius:16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      padding:0;
+    }
+    dialog::backdrop{background: rgba(0,0,0,.45)}
+    .modalHd{
+      padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--line);background: #fff;
+    }
+    .modalHd strong{font-size:16px}
+    .closeX{border:0;background:transparent;font-size:20px;cursor:pointer}
+    .modalBd{padding:14px 16px;background:#fff}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th, td{padding:10px 8px;border-bottom:1px solid #f1f5f9;text-align:left;vertical-align:top}
+    th{color:#111827;background:#f9fafb;position:sticky;top:0}
+    .pill{
+      display:inline-flex;gap:6px;align-items:center;
+      padding:4px 8px;border-radius:999px;border:1px solid var(--line);
+      background:#fff;font-weight:800;
+    }
+    .pill b{color:#b45309}
+    .muted{color:var(--muted)}
+    .adminTop{
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px
+    }
+    .adminTop .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .search{
+      padding:10px 12px;border:1px solid var(--line);border-radius:12px;min-width:220px
+    }
+    .small{font-size:12px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>轉盤大樂透</h1>
+      <span class="badge">填姓名＋選 3 碼＋特別號（可重複）</span>
+    </div>
+    <button class="adminBtn" id="openAdmin">管理者</button>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="hd"><h2>參加者填寫</h2></div>
+      <div class="bd">
+        <div class="row">
+          <label for="name">姓名</label>
+          <input id="name" type="text" maxlength="30" placeholder="請輸入姓名（可中文/英文）" autocomplete="name" />
+        </div>
+
+        <div class="row">
+          <label>三碼（選 3 個）</label>
+          <div>
+            <div class="nums" id="pick3"></div>
+            <div class="hint">規則：1～7 任選 3 碼，不重複、不看順序。</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>特別號（選 1 個）</label>
+          <div>
+            <div class="nums" id="pickS"></div>
+            <div class="hint">特別號是獨立選（1～7），可與三碼重複。</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="submit">送出</button>
+          <button class="btn ghost" id="reset">重選</button>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <div class="sideList">
+          <div class="kvs"><span>目前已送出筆數</span><code id="count">0</code></div>
+          <div class="kvs"><span>你這次選的三碼</span><code id="cur3">-</code></div>
+          <div class="kvs"><span>你這次的特別號</span><code id="curS">-</code></div>
+          <div class="hint small">提示：這是純前端 localStorage 版本（名單存在同一台裝置/瀏覽器）。要「大家手機填、集中到同一份名單」可改成 Google Sheet/後端 API 版。</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card">
+      <div class="hd"><h2>活動說明</h2></div>
+      <div class="bd">
+        <p class="muted" style="margin-top:0">
+          參加方式：填姓名 → 選三碼（1～7）→ 選特別號（1～7，可與三碼重複）→ 送出。
+        </p>
+        <div style="border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff">
+          <div style="font-weight:900;margin-bottom:6px">獎項（依你圖片）</div>
+          <div class="muted small" style="line-height:1.6">
+            樂透頭獎：特別號 + 中三碼（NTD 3,000）<br/>
+            樂透貳獎：特別號 + 中兩碼（NTD 1,000）<br/>
+            樂透參獎：特別號 + 中一碼（NTD 500）<br/>
+            樂透肆獎：中三碼（NTD 300）<br/>
+            樂透伍獎：中兩碼（NTD 200）<br/>
+            樂透普獎：中一碼（NTD 100）
+          </div>
+        </div>
+
+        <div class="hint" style="margin-top:12px">
+          管理者：右上角「管理者」可查看所有送出資料、匯出 CSV、清空資料。
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="adminDlg">
+  <div class="modalHd">
+    <strong>管理者模式</strong>
+    <button class="closeX" id="closeAdmin" aria-label="關閉">×</button>
+  </div>
+  <div class="modalBd">
+    <div class="adminTop">
+      <div class="left">
+        <input class="search" id="adminPass" type="password" placeholder="輸入管理密碼（預設：1234）" />
+        <button class="btn ghost" id="unlock">解鎖</button>
+        <span class="muted small" id="lockState">未解鎖</span>
+      </div>
+      <div class="left">
+        <button class="btn ghost" id="exportCsv" disabled>匯出 CSV</button>
+        <button class="btn warn" id="clearAll" disabled>清空所有資料</button>
+      </div>
+    </div>
+
+    <div class="muted small" style="margin:6px 0 10px 0">
+      這是純前端 localStorage 名單：只會存在此裝置/瀏覽器。要集中收資料請改成後端版。
+    </div>
+
+    <div style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:14px">
+      <table>
+        <thead>
+        <tr>
+          <th style="width:56px">#</th>
+          <th>姓名</th>
+          <th>三碼</th>
+          <th>特別號</th>
+          <th>時間</th>
+        </tr>
+        </thead>
+        <tbody id="adminTbody">
+        <tr><td colspan="5" class="muted">尚未解鎖或沒有資料</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  // ====== 設定區（你可以改）======
+  const NUM_MIN = 1;
+  const NUM_MAX = 7;
+  const PICK_THREE = 3;
+  const STORAGE_KEY = "lucky_lotto_entries_v1";
+  const ADMIN_PASSWORD = "1234"; // <- 改成你要的
+  // ==============================
+
+  const $ = (sel) => document.querySelector(sel);
+
+  const pick3El = $("#pick3");
+  const pickSEl = $("#pickS");
+  const nameEl  = $("#name");
+  const msgEl   = $("#msg");
+  const countEl = $("#count");
+  const cur3El  = $("#cur3");
+  const curSEl  = $("#curS");
+
+  let selected3 = new Set();
+  let selectedS = null;
+
+  function nowISO(){
+    const d = new Date();
+    const pad = (n)=> String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function getEntries(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){
+      return [];
+    }
+  }
+  function setEntries(list){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    updateCount();
+  }
+  function updateCount(){
+    countEl.textContent = String(getEntries().length);
+  }
+
+  function showMsg(type, text){
+    msgEl.className = "msg " + (type === "ok" ? "ok" : "bad");
+    msgEl.textContent = text;
+  }
+  function clearMsg(){
+    msgEl.className = "msg";
+    msgEl.textContent = "";
+  }
+
+  function renderChips(container, onClick){
+    container.innerHTML = "";
+    for(let n=NUM_MIN; n<=NUM_MAX; n++){
+      const btn = document.createElement("div");
+      btn.className = "chip";
+      btn.textContent = n;
+      btn.dataset.num = String(n);
+      btn.addEventListener("click", ()=> onClick(n, btn));
+      container.appendChild(btn);
+    }
+  }
+
+  function syncUI(){
+    // update active states for 3-number chips
+    [...pick3El.children].forEach(chip=>{
+      const n = Number(chip.dataset.num);
+      chip.classList.toggle("active", selected3.has(n));
+      chip.classList.toggle("disabled", !selected3.has(n) && selected3.size >= PICK_THREE);
+    });
+
+    // special number chips: ALWAYS enabled (special is independent and may overlap)
+    [...pickSEl.children].forEach(chip=>{
+      const n = Number(chip.dataset.num);
+      chip.classList.toggle("disabled", false);
+      chip.classList.toggle("active", selectedS === n);
+    });
+
+    cur3El.textContent = selected3.size ? [...selected3].sort((a,b)=>a-b).join(" ") : "-";
+    curSEl.textContent = selectedS ?? "-";
+  }
+
+  function resetAll(){
+    selected3 = new Set();
+    selectedS = null;
+    clearMsg();
+    syncUI();
+  }
+
+  function onPick3(n){
+    clearMsg();
+    if(selected3.has(n)){
+      selected3.delete(n);
+    }else{
+      if(selected3.size >= PICK_THREE) return;
+      selected3.add(n);
+    }
+    syncUI();
+  }
+
+  function onPickS(n){
+    clearMsg();
+    selectedS = (selectedS === n) ? null : n;
+    syncUI();
+  }
+
+  function validate(){
+    const name = nameEl.value.trim();
+    if(!name) return {ok:false, msg:"請先填寫姓名。"};
+    if(selected3.size !== PICK_THREE) return {ok:false, msg:`請選滿三碼（目前 ${selected3.size} 碼）。`};
+    if(selectedS == null) return {ok:false, msg:"請選一個特別號。"};
+    return {ok:true};
+  }
+
+async function submit(){
+  const v = validate();
+  if(!v.ok){
+    showMsg("bad", v.msg);
+    return;
+  }
+
+  const payload = {
+    name: nameEl.value.trim(),
+    pick3: [...selected3].sort((a,b)=>a-b),
+    special: selectedS
+  };
+
+  try {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbxsSbk-0XvO9LXs_wFmQMBrpfjoG8NBlXrwRZgrGhnVyhE5PP9UbclBXRkpyJwqrthvzQ/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+
+    if(json.success){
+      showMsg("ok", "✅ 已送出！祝你中獎～");
+      selected3 = new Set();
+      selectedS = null;
+      syncUI();
+    }else{
+      showMsg("bad", "送出失敗，請稍後再試");
+    }
+  } catch(e){
+    showMsg("bad", "連線失敗，請檢查網路");
+  }
+}
+
+  // init
+  renderChips(pick3El, (n)=>onPick3(n));
+  renderChips(pickSEl, (n)=>onPickS(n));
+  updateCount();
+  syncUI();
+
+  $("#submit").addEventListener("click", submit);
+  $("#reset").addEventListener("click", resetAll);
+
+  // ===== Admin modal =====
+  const adminDlg = $("#adminDlg");
+  const adminTbody = $("#adminTbody");
+  const exportBtn = $("#exportCsv");
+  const clearBtn  = $("#clearAll");
+  const lockState = $("#lockState");
+  let unlocked = false;
+
+  function openAdmin(){
+    $("#adminPass").value = "";
+    setLocked(true);
+    adminDlg.showModal();
+  }
+  function closeAdmin(){
+    adminDlg.close();
+  }
+  function setLocked(lock){
+    unlocked = !lock;
+    exportBtn.disabled = lock;
+    clearBtn.disabled = lock;
+    lockState.textContent = lock ? "未解鎖" : "已解鎖";
+    lockState.style.color = lock ? "#6b7280" : "#16a34a";
+    renderAdminTable();
+  }
+
+  function renderAdminTable(){
+    if(!unlocked){
+      adminTbody.innerHTML = `<tr><td colspan="5" class="muted">請先解鎖以查看資料</td></tr>`;
+      return;
+    }
+    const list = getEntries();
+    if(!list.length){
+      adminTbody.innerHTML = `<tr><td colspan="5" class="muted">目前沒有資料</td></tr>`;
+      return;
+    }
+    adminTbody.innerHTML = list.map((e, idx)=>{
+      const p3 = e.pick3?.join(" ") ?? "-";
+      const sp = e.special ?? "-";
+      return `
+        <tr>
+          <td>${idx+1}</td>
+          <td><strong>${escapeHtml(e.name)}</strong></td>
+          <td><span class="pill">三碼：<b>${p3}</b></span></td>
+          <td><span class="pill">特別號：<b>${sp}</b></span></td>
+          <td class="muted small">${escapeHtml(e.time || "")}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[s]));
+  }
+
+  function exportCsv(){
+    const list = getEntries();
+    const header = ["name","pick1","pick2","pick3","special","time"];
+    const rows = list.map(e => [
+      e.name,
+      e.pick3?.[0] ?? "",
+      e.pick3?.[1] ?? "",
+      e.pick3?.[2] ?? "",
+      e.special ?? "",
+      e.time ?? ""
+    ]);
+    const csv = [header, ...rows]
+      .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "lotto_entries.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function clearAll(){
+    if(!confirm("確定要清空所有資料？此動作無法復原。")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    updateCount();
+    renderAdminTable();
+    alert("已清空。");
+  }
+
+  $("#openAdmin").addEventListener("click", openAdmin);
+  $("#closeAdmin").addEventListener("click", closeAdmin);
+  $("#unlock").addEventListener("click", ()=>{
+    const pass = $("#adminPass").value;
+    if(pass === ADMIN_PASSWORD){
+      setLocked(false);
+    }else{
+      alert("密碼錯誤。");
+      setLocked(true);
+    }
+  });
+  exportBtn.addEventListener("click", exportCsv);
+  clearBtn.addEventListener("click", clearAll);
+
+  adminDlg.addEventListener("cancel", (e)=>{ e.preventDefault(); closeAdmin(); });
+</script>
+</body>
+</html>
