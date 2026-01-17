@@ -307,10 +307,21 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   }
 
-  function showMsg(type, text){
-    msgEl.className = "msg " + (type === "ok" ? "ok" : "bad");
-    msgEl.textContent = text;
-  }
+  function showMsg(type, html) {
+  const box = document.getElementById("msg"); // 你的訊息框 id，若不同請改成你的
+  if (!box) return;
+
+  box.className = "msg " + type;  // 例如 msg ok / msg bad
+  box.innerHTML = html;
+  box.style.display = "block";
+}
+
+function clearMsg() {
+  const box = document.getElementById("msg");
+  if (!box) return;
+  box.innerHTML = "";
+  box.style.display = "none";
+}
   function clearMsg(){
     msgEl.className = "msg";
     msgEl.textContent = "";
@@ -404,20 +415,48 @@ async function submit(){
       body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
+    const text = (await res.text()).trim();
 
-    if(text === "OK"){
-      showMsg("ok", "✅ 已送出！");
-    }else if(text === "DUPLICATE"){
-      showMsg("bad", "⚠️ 你已經報名過了（同姓名不可重複）");
-    }else if(text === "ERROR:NAME_ONLY_CHINESE"){
-      showMsg("bad", "姓名僅限中文，請重新輸入");
-    }else{
-      showMsg("bad", "送出失敗：" + text);
-    }
+// 送出按鈕防連點（請把 submitBtn 改成你的送出按鈕元素變數/ID）
+const submitBtn = document.getElementById("btnSubmit"); // 若你的按鈕 id 不同就改
+if (submitBtn) submitBtn.disabled = false;
+
+if (text === "OK") {
+  showMsg(
+    "ok",
+    `✅ <b>報名成功</b><br>
+     你已完成填寫，祝你好運！`
+  );
+
+} else if (text.startsWith("DUPLICATE|")) {
+  // 格式：DUPLICATE|n1|n2|n3|sp
+  const parts = text.split("|");
+  const n1 = parts[1], n2 = parts[2], n3 = parts[3], sp = parts[4];
+
+  showMsg(
+    "bad",
+    `✅ <b>你已完成報名</b>（同姓名不可重複）<br>
+     📌 你之前填的是：<b>${n1}、${n2}、${n3}</b>（特別號：<b>${sp}</b>）<br>
+     若有問題請洽工作人員`
+  );
+
+} else if (text === "ERROR:NAME_ONLY_CHINESE") {
+  showMsg(
+    "bad",
+    `⚠️ 姓名僅限<b>中文</b>，請重新輸入`
+  );
+
+} else {
+  showMsg(
+    "bad",
+    `⚠️ 送出未完成，請稍後再試<br>
+     （若持續失敗請洽工作人員）`
+  );
+}
+
 
   } catch(e){
-    showMsg("bad", "連線失敗，請檢查網路");
+    showMsg("bad", "⚠️ 連線失敗，請檢查網路或洽工作人員");
   }
 }
 
@@ -537,10 +576,3 @@ async function submit(){
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
