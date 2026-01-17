@@ -63,6 +63,32 @@ details.prize-top table{
 .ball.spin{
   animation: pop .35s ease-in-out infinite alternate;
 }
+.drawWrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+.drawBalls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  width:100%;
+}
+.drawLabel{ font-weight:900; text-align:center; }
+.drawSep{ font-weight:900; opacity:.7; }
+
+/* 特別號球：不同顏色 */
+.ball.special{
+  background: #fee2e2;
+  border-color: rgba(185,28,28,.35);
+  color: #b91c1c;
+}
+
+/* ③ 結果列表 標題置中（你也可以只用 inline style 改 h3） */
+#resultStage > h3{ text-align:center; }
 @keyframes pop{
   from{ transform: translateY(0) scale(1); }
   to  { transform: translateY(-6px) scale(1.05); }
@@ -102,7 +128,7 @@ details.prize-top table{
       </div>
 
       <div class="card">
-        <<div class="manual-draw">
+        <div class="manual-draw">
     <h3 style="margin:0 0 10px 0">② 輸入中獎號碼</h3>
     <div class="row">
       <label>開獎三碼</label>
@@ -122,12 +148,19 @@ details.prize-top table{
       </div>
     </div>
 	
-	<div id="drawStage" style="display:none;margin:12px 0 16px 0">
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <div class="ball" id="ball1">?</div>
-    <div class="ball" id="ball2">?</div>
-    <div class="ball" id="ball3">?</div>
-    <div id="drawLabel" style="margin-left:8px;font-weight:900">開獎中…</div>
+<div id="drawStage" style="display:none;margin:12px 0 16px 0">
+  <div class="drawWrap">
+    <div class="drawBalls">
+      <div class="ball" id="ball1">?</div>
+      <div class="ball" id="ball2">?</div>
+      <div class="ball" id="ball3">?</div>
+
+      <div class="drawSep">+</div>
+
+      <div class="ball special" id="ballS">?</div>
+    </div>
+
+    <div id="drawLabel" class="drawLabel">開獎中…</div>
   </div>
 </div>
 
@@ -222,20 +255,22 @@ function setDrawInputs(d3, ds){
       if(!specialHit && hit===1) return {name:"樂透普獎", amount:100,  key:"F"};
       return null;
     }
-function playDrawAnimationAndRender(finalNums){
+function playDrawAnimationAndRender(finalNums, finalSpecial){
   // finalNums: [n1,n2,n3] 最終開獎三碼
   const stage = document.getElementById('drawStage');
-  const rstage = document.getElementById('resultStage'); // 如果你沒有包 resultStage，可以略過這兩行並改用 tbodyEl
+  const rstage = document.getElementById('resultStage');
   const b1 = document.getElementById('ball1');
   const b2 = document.getElementById('ball2');
   const b3 = document.getElementById('ball3');
+  const bs = document.getElementById('ballS');
+  const label = document.getElementById('drawLabel');
 
   // 顯示動畫、先把結果淡出
   if(stage) stage.style.display = '';
+  if(label) label.textContent = '開獎中…';
   if(rstage){ rstage.classList.remove('show'); }
 
-  // 滾動：每 80ms 亂跳一次（1~7）
-  const balls = [b1,b2,b3].filter(Boolean);
+  const balls = [b1,b2,b3,bs].filter(Boolean);
   balls.forEach(b => b.classList.add('spin'));
 
   const tick = () => String(1 + Math.floor(Math.random()*7));
@@ -243,37 +278,27 @@ function playDrawAnimationAndRender(finalNums){
     if(b1) b1.textContent = tick();
     if(b2) b2.textContent = tick();
     if(b3) b3.textContent = tick();
+    if(bs) bs.textContent = tick();
   }, 80);
 
   // 依序停球（更有「開獎感」）
   setTimeout(()=>{ if(b1){ b1.textContent = String(finalNums[0]); b1.classList.remove('spin'); } }, 900);
   setTimeout(()=>{ if(b2){ b2.textContent = String(finalNums[1]); b2.classList.remove('spin'); } }, 1500);
   setTimeout(()=>{ if(b3){ b3.textContent = String(finalNums[2]); b3.classList.remove('spin'); } }, 2100);
+  setTimeout(()=>{ if(bs){ bs.textContent = String(finalSpecial); bs.classList.remove('spin'); } }, 2550);
 
-  // 最後停止 timer、渲染結果、淡入
+  // 最後停止 timer、渲染結果、淡入（⚠️不再隱藏 stage，讓結果留在頁面）
   setTimeout(()=>{
-  clearInterval(timer);
+    clearInterval(timer);
 
-  // ✅ 這裡保留最後數字（其實前面已經逐顆停球了，這裡確保一次）
-  if(b1) b1.textContent = String(finalNums[0]);
-  if(b2) b2.textContent = String(finalNums[1]);
-  if(b3) b3.textContent = String(finalNums[2]);
+    if(label) label.textContent = '開獎結果';
 
-  // ✅ 不要把 drawStage 隱藏（留在頁面上）
-  // if(stage) stage.style.display = 'none';
+    renderResults();
 
-  // ✅ 把提示文字改成「開獎結果」
-  const label = document.getElementById('drawLabel');
-  if(label) label.textContent = '開獎結果';
-
-  // ✅ 渲染名單（你原本就有 winners 了）
-  renderResults();
-
-  // ✅ 名單淡入
-  if(rstage){
-    requestAnimationFrame(()=> rstage.classList.add('show'));
-  }
-}, 2400);
+    if(rstage){
+      requestAnimationFrame(()=> rstage.classList.add('show'));
+    }
+  }, 2850);
 }
 
 
@@ -444,7 +469,7 @@ return `
 
       showMsg(calcMsgEl, "ok", "算獎完成");
       if(withAnimation){
-    playDrawAnimationAndRender(d3);
+    playDrawAnimationAndRender(d3, ds);
   } else {
     renderResults();
   }
