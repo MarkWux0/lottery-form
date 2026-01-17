@@ -126,16 +126,11 @@
     }
 
     function readDrawInputs(){
-      // 支援快速貼上
-      const pasted = $("#paste").value.trim();
-      if(pasted){
-        const nums = parseNums(pasted);
-        if(nums.length >= 4){
-          const ds = nums[nums.length - 1];
-          const d3 = nums.slice(0, 3);
-          return { d3, ds };
-        }
-      }
+  		const d3 = parseNums($("#d3").value).slice(0,3);
+  		const dsArr = parseNums($("#ds").value);
+  		const ds = dsArr[0];
+  		return { d3, ds };
+	}
 
       const d3 = parseNums($("#d3").value).slice(0,3);
       const dsArr = parseNums($("#ds").value);
@@ -323,6 +318,7 @@
   </script>
 </body>
 </html>
+
 
 
 
