@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>轉盤大樂透｜管理者開獎</title>
+  <style>
+    :root{--bg:#fff7ea;--card:#fff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--brand:#b91c1c;--ok:#16a34a;--bad:#dc2626}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px 0;font-size:22px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+    .row{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;margin:10px 0}
+    @media (max-width:560px){.row{grid-template-columns:1fr}}
+    label{font-weight:800}
+    input, textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:15px;outline:none}
+    input:focus, textarea:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .primary{background:var(--brand);color:#fff}
+    .ghost{background:#fff;border:1px solid var(--line)}
+    .warn{background:#fff;border:1px solid rgba(220,38,38,.35);color:var(--bad)}
+    .msg{display:none;margin-top:10px;padding:10px 12px;border-radius:12px;font-weight:800}
+    .msg.ok{display:block;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25);color:var(--ok)}
+    .msg.bad{display:block;background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.25);color:var(--bad)}
+    .muted{color:var(--muted);font-size:13px;line-height:1.5}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:10px 8px;border-bottom:1px solid #f1f5f9;text-align:left;vertical-align:top}
+    th{background:#f9fafb;position:sticky;top:0}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:800}
+    .pill b{color:#b45309}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:880px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>轉盤大樂透｜管理者開獎頁</h1>
+    <div class="muted">
+      使用方式：載入名單（從 Google Sheet）→ 輸入/貼上中獎號碼 → 立即算獎 → 匯出中獎名單 CSV。<br/>
+      規則：三碼命中「不看順序」；特別號獨立 1~7（可與三碼重複）。
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3 style="margin:0 0 10px 0">① 載入名單</h3>
+        <div class="btns">
+          <button class="ghost" id="load">載入名單（GET）</button>
+          <button class="warn" id="clearCache">清空快取</button>
+        </div>
+        <div id="loadMsg" class="msg"></div>
+        <div class="muted" id="countInfo">尚未載入。</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 10px 0">② 輸入中獎號碼</h3>
+        <div class="row">
+          <label>快速貼上</label>
+          <textarea id="paste" rows="2" placeholder="可貼：1 2 3 特別 5  /  1,2,3,5  /  1235（最後一位當特別號）"></textarea>
+        </div>
+        <div class="row">
+          <label>開獎三碼</label>
+          <input id="d3" placeholder="例如：1 2 3（用空白或逗號分隔）" />
+        </div>
+        <div class="row">
+          <label>特別號</label>
+          <input id="ds" placeholder="例如：5" />
+        </div>
+        <div class="btns">
+          <button class="primary" id="calc">立即算獎</button>
+          <button class="ghost" id="export">匯出中獎CSV</button>
+        </div>
+        <div id="calcMsg" class="msg"></div>
+        <div class="muted" id="summary">尚未算獎。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px 0">③ 結果列表</h3>
+      <div style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:14px">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:52px">#</th>
+              <th>姓名</th>
+              <th>下注</th>
+              <th>中獎</th>
+              <th>獎金</th>
+              <th>時間</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6" class="muted">尚未算獎。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="muted">
+      獎項：頭獎 3000（特別+中三碼）/ 貳獎 1000（特別+中兩碼）/ 參獎 500（特別+中一碼）/ 肆獎 300（中三碼）/ 伍獎 200（中兩碼）/ 普獎 100（中一碼）
+    </div>
+  </div>
+
+  <script>
+    // ====== 你也可以在這裡寫死 URL（可選）======
+    const API_URL = "https://script.google.com/macros/s/AKfycbxiFYaqf7GpFqV3js6RFx64K24oqw3wloGFYA89tQImohNlB6zAIctUnGTcwkzcjca49g/exec";
+    // ============================================
+    const $ = s => document.querySelector(s);
+    const apiUrlEl = $("#apiUrl");
+    const loadMsgEl = $("#loadMsg");
+    const calcMsgEl = $("#calcMsg");
+    const countInfoEl = $("#countInfo");
+    const summaryEl = $("#summary");
+    const tbodyEl = $("#tbody");
+
+    let entries = [];        // 全部名單
+    let winners = [];        // 中獎名單（算獎後）
+
+    function showMsg(el, type, text){
+      el.className = "msg " + (type === "ok" ? "ok" : "bad");
+      el.textContent = text;
+    }
+    function clearMsg(el){ el.className = "msg"; el.textContent=""; }
+
+    function parseNums(str){
+      // 取出 1~7 的數字
+      const arr = (str.match(/[1-7]/g) || []).map(x => Number(x));
+      return arr;
+    }
+
+    function readDrawInputs(){
+      // 支援快速貼上
+      const pasted = $("#paste").value.trim();
+      if(pasted){
+        const nums = parseNums(pasted);
+        if(nums.length >= 4){
+          const ds = nums[nums.length - 1];
+          const d3 = nums.slice(0, 3);
+          return { d3, ds };
+        }
+      }
+
+      const d3 = parseNums($("#d3").value).slice(0,3);
+      const dsArr = parseNums($("#ds").value);
+      const ds = dsArr[0];
+      return { d3, ds };
+    }
+
+    function valid1to7(n){ return Number.isInteger(n) && n>=1 && n<=7; }
+
+    function calcPrize(entry, draw3, drawS){
+      const pickSet = new Set(entry.pick3);
+      let hit = 0;
+      for(const n of draw3) if(pickSet.has(n)) hit++;
+      const specialHit = entry.special === drawS;
+
+      if(specialHit && hit===3) return {name:"樂透頭獎", amount:3000, key:"A"};
+      if(specialHit && hit===2) return {name:"樂透貳獎", amount:1000, key:"B"};
+      if(specialHit && hit===1) return {name:"樂透參獎", amount:500,  key:"C"};
+      if(!specialHit && hit===3) return {name:"樂透肆獎", amount:300,  key:"D"};
+      if(!specialHit && hit===2) return {name:"樂透伍獎", amount:200,  key:"E"};
+      if(!specialHit && hit===1) return {name:"樂透普獎", amount:100,  key:"F"};
+      return null;
+    }
+
+    function renderResults(){
+      if(!winners.length){
+        tbodyEl.innerHTML = `<tr><td colspan="6" class="muted">本次無人中獎。</td></tr>`;
+        return;
+      }
+      tbodyEl.innerHTML = winners.map((w, i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td><strong>${escapeHtml(w.name)}</strong></td>
+          <td>
+            <span class="pill">三碼：<b>${w.pick3.join(" ")}</b></span>
+            <span class="pill">特別：<b>${w.special}</b></span>
+          </td>
+          <td>${escapeHtml(w.prize)}</td>
+          <td><strong>NTD ${Number(w.amount).toLocaleString()}</strong></td>
+          <td class="muted">${escapeHtml(String(w.time||""))}</td>
+        </tr>
+      `).join("");
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[s]));
+    }
+
+    async function loadEntries(){
+      clearMsg(loadMsgEl);
+      const url = API_URL;
+      if(!url){ showMsg(loadMsgEl, "bad", "請先貼上 Apps Script Web App URL"); return; }
+
+      try{
+        const res = await fetch(
+			url + "?t=" + Date.now(),
+			{
+				method: "GET",
+				cache: "no-store"
+			}
+		);
+        const json = await res.json();
+
+        if(!Array.isArray(json)){
+          showMsg(loadMsgEl, "bad", "載入失敗：API 回傳不是陣列（請確認 doGet 回 JSON array）");
+          return;
+        }
+        entries = json.map(r => ({
+          time: r.time,
+          name: r.name,
+          pick3: (r.pick3 || []).map(Number),
+          special: Number(r.special)
+        })).filter(r => r.name && r.pick3.length === 3 && valid1to7(r.special));
+
+        showMsg(loadMsgEl, "ok", "載入成功");
+        countInfoEl.textContent = `已載入 ${entries.length} 筆名單。`;
+      }catch(e){
+        showMsg(loadMsgEl, "bad", "載入失敗（網路/權限/CORS）："+ e);
+      }
+    }
+
+    function runCalc(){
+      clearMsg(calcMsgEl);
+      if(!entries.length){
+        showMsg(calcMsgEl, "bad", "請先載入名單（從 Sheet）");
+        return;
+      }
+      const {d3, ds} = readDrawInputs();
+      if(d3.length !== 3 || d3.some(n=>!valid1to7(n))){
+        showMsg(calcMsgEl, "bad", "開獎三碼請輸入 3 個 1~7 的數字");
+        return;
+      }
+      // 一般開獎三碼不重複；若你要允許重複，把這段刪掉即可
+      if(new Set(d3).size !== 3){
+        showMsg(calcMsgEl, "bad", "開獎三碼請勿重複（若你要允許重複我也可以幫你改）");
+        return;
+      }
+      if(!valid1to7(ds)){
+        showMsg(calcMsgEl, "bad", "特別號請輸入 1~7");
+        return;
+      }
+
+      const counts = {};
+      let total = 0;
+      winners = [];
+
+      for(const e of entries){
+        const p = calcPrize(e, d3, ds);
+        if(p){
+          counts[p.key] = (counts[p.key]||0)+1;
+          total += p.amount;
+          winners.push({
+            time: e.time,
+            name: e.name,
+            pick3: e.pick3,
+            special: e.special,
+            prize: p.name,
+            amount: p.amount
+          });
+        }
+      }
+
+      const winnersCount = winners.length;
+      summaryEl.innerHTML = `
+        <div style="font-weight:900;margin-bottom:6px">開獎：三碼 ${d3.join(" ")}｜特別號 ${ds}</div>
+        <div>中獎人數：<b>${winnersCount}</b> 人｜總發放：<b>NTD ${total.toLocaleString()}</b></div>
+        <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div>頭獎(3000)：${counts.A||0}</div>
+          <div>貳獎(1000)：${counts.B||0}</div>
+          <div>參獎(500)：${counts.C||0}</div>
+          <div>肆獎(300)：${counts.D||0}</div>
+          <div>伍獎(200)：${counts.E||0}</div>
+          <div>普獎(100)：${counts.F||0}</div>
+        </div>
+      `;
+
+      showMsg(calcMsgEl, "ok", "算獎完成");
+      renderResults();
+    }
+
+    function exportWinners(){
+      if(!winners.length){
+        alert("目前沒有中獎名單可匯出");
+        return;
+      }
+      const header = ["time","name","pick1","pick2","pick3","special","prize","amount"];
+      const rows = winners.map(w => [
+        w.time ?? "",
+        w.name ?? "",
+        w.pick3?.[0] ?? "",
+        w.pick3?.[1] ?? "",
+        w.pick3?.[2] ?? "",
+        w.special ?? "",
+        w.prize ?? "",
+        w.amount ?? ""
+      ]);
+      const csv = [header, ...rows]
+        .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "winners.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    $("#load").addEventListener("click", loadEntries);
+    $("#calc").addEventListener("click", runCalc);
+    $("#export").addEventListener("click", exportWinners);
+    $("#clearCache").addEventListener("click", ()=>{
+      entries = [];
+      winners = [];
+      clearMsg(loadMsgEl); clearMsg(calcMsgEl);
+      countInfoEl.textContent = "已清空快取。";
+      summaryEl.textContent = "尚未算獎。";
+      tbodyEl.innerHTML = `<tr><td colspan="6" class="muted">尚未算獎。</td></tr>`;
+    });
+  </script>
+</body>
+</html>
