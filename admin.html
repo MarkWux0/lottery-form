@@ -212,8 +212,8 @@ details.prize-top table{
     function clearMsg(el){ el.className = "msg"; el.textContent=""; }
 
     function parseNums(str){
-      // 取出 1~7 的數字
-      const arr = (str.match(/[1-7]/g) || []).map(x => Number(x));
+      // 取出 1~8 的數字
+      const arr = (str.match(/[1-8]/g) || []).map(x => Number(x));
       return arr;
     }
 
@@ -403,7 +403,7 @@ return `
           name: r.name,
           pick3: (r.pick3 || []).map(Number),
           special: Number(r.special)
-        })).filter(r => r.name && r.pick3.length === 3 && valid1to7(r.special));
+        })).filter(r => r.name && r.pick3.length === 3 && valid1to8(r.special));
 
         showMsg(loadMsgEl, "ok", "載入成功");
         countInfoEl.textContent = `已載入 ${entries.length} 筆名單。`;
@@ -419,8 +419,8 @@ return `
         return;
       }
       const {d3, ds} = readDrawInputs();
-      if(d3.length !== 3 || d3.some(n=>!valid1to7(n))){
-        showMsg(calcMsgEl, "bad", "開獎三碼請輸入 3 個 1~7 的數字");
+      if(d3.length !== 3 || d3.some(n=>!valid1to8(n))){
+        showMsg(calcMsgEl, "bad", "開獎三碼請輸入 3 個 1~8 的數字");
         return;
       }
       // 一般開獎三碼不重複；若你要允許重複，把這段刪掉即可
@@ -428,8 +428,8 @@ return `
         showMsg(calcMsgEl, "bad", "開獎三碼請勿重複（若你要允許重複我也可以幫你改）");
         return;
       }
-      if(!valid1to7(ds)){
-        showMsg(calcMsgEl, "bad", "特別號請輸入 1~7");
+      if(!valid1to8(ds)){
+        showMsg(calcMsgEl, "bad", "特別號請輸入 1~8");
         return;
       }
 
@@ -527,6 +527,7 @@ return `
   </script>
 </body>
 </html>
+
 
 
 
