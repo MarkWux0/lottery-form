@@ -227,7 +227,7 @@ details.prize-top table{
     function valid1to7(n){ return Number.isInteger(n) && n>=1 && n<=7; }
 	
 	function randomUnique3(){
-  const arr = [1,2,3,4,5,6,7];
+  const arr = [1,2,3,4,5,6,7,8];
   // 洗牌取前三
   for(let i=arr.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
@@ -511,7 +511,7 @@ return `
 	$("#draw").addEventListener("click", ()=>{
   // 隨機產生三碼（不重複）+ 特別號（可重複）
   const d3 = randomUnique3();
-  const ds = 1 + Math.floor(Math.random()*7);
+  const ds = 1 + Math.floor(Math.random()*8);
   setDrawInputs(d3, ds);
   runCalc(true); // 直接跑動畫 + 中獎名單
 });
@@ -527,4 +527,5 @@ return `
   </script>
 </body>
 </html>
+
 
