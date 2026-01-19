@@ -292,7 +292,10 @@ function playDrawAnimationAndRender(finalNums, finalSpecial, winnersSnapshot, to
   }, 80);
 
 const safe = (fn) => {
-  if(token !== drawToken) return; // ✅ 舊動畫直接失效，不准改球
+  if(token !== drawToken){
+    clearInterval(timer);     // ✅ 立刻停掉亂跳
+    return;
+  }
   fn();
 };
 
@@ -309,11 +312,20 @@ setTimeout(()=> safe(()=>{ if(bs){ bs.textContent = String(finalSpecial); bs.cla
   if(label) label.textContent = '開獎結果';
 
   // ✅ 如果期間又開獎過（token 變了），這次動畫就不要覆蓋結果
-  if(token !== drawToken){
-    isAnimating = false;
-    setDrawButtonsDisabled(false);
-    return;
-  }
+if(token !== drawToken){
+  // ✅ 確保不會殘留亂跳
+  isAnimating = false;
+  setDrawButtonsDisabled(false);
+  return;
+}
+
+// ✅ token 正確時：強制把球定格為最終號碼（避免最後一刻被 tick 蓋掉）
+if(b1) b1.textContent = String(finalNums[0]);
+if(b2) b2.textContent = String(finalNums[1]);
+if(b3) b3.textContent = String(finalNums[2]);
+if(bs) bs.textContent = String(finalSpecial);
+
+renderResults(winnersSnapshot);
 
   // ✅ 用當次快照渲染，永遠對齊動畫數字
   renderResults(winnersSnapshot);
@@ -561,6 +573,7 @@ if(withAnimation){
   </script>
 </body>
 </html>
+
 
 
 
