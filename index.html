@@ -371,11 +371,11 @@ async function postToApi(payloadObj) {
   });
 
   const resp = await fetch(API_URL, {
-    method: "POST",
-    // ⚠️ 不要加 headers（尤其 Content-Type），避免觸發 OPTIONS
-    body,
-    cache: "no-store",
-  });
+  method: "POST",
+  headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  body: body.toString(),
+  cache: "no-store",
+});
 
   const text = (await resp.text()).trim();
   if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text || "NO_BODY"}`);
@@ -662,6 +662,7 @@ function setSubmitEnabled(enabled){
 </script>
 </body>
 </html>
+
 
 
 
