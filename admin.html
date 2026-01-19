@@ -494,7 +494,6 @@ return `
 
       const winnersCount = winners.length;
       summaryEl.innerHTML = `
-        <div style="font-weight:900;margin-bottom:6px">開獎：三碼 ${d3.join(" ")}｜特別號 ${ds}</div>
         <div>中獎人數：<b>${winnersCount}</b> 人｜總發放：<b>NTD ${total.toLocaleString()}</b></div>
         <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">
           <div>頭獎(3000)：${counts.A||0}</div>
@@ -573,6 +572,7 @@ if(withAnimation){
   </script>
 </body>
 </html>
+
 
 
 
