@@ -213,7 +213,7 @@ details.prize-top table{
 
     function parseNums(str){
       // 取出 1~8 的數字
-      const arr = (str.match(/[1-8]/g) || []).map(x => Number(x));
+      const arr = (str.match(/[1-9]/g) || []).map(x => Number(x));
       return arr;
     }
 
@@ -224,10 +224,10 @@ details.prize-top table{
   		return { d3, ds };
 	}
 
-    function valid1to8(n){ return Number.isInteger(n) && n>=1 && n<=8; }
+    function valid1to9(n){ return Number.isInteger(n) && n>=1 && n<=9; }
 	
 	function randomUnique3(){
-  const arr = [1,2,3,4,5,6,7,8];
+  const arr = [1,2,3,4,5,6,7,8,9];
   // 洗牌取前三
   for(let i=arr.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
@@ -273,7 +273,7 @@ function playDrawAnimationAndRender(finalNums, finalSpecial){
   const balls = [b1,b2,b3,bs].filter(Boolean);
   balls.forEach(b => b.classList.add('spin'));
 
-  const tick = () => String(1 + Math.floor(Math.random()*7));
+  const tick = () => String(1 + Math.floor(Math.random()*9));
   const timer = setInterval(()=>{
     if(b1) b1.textContent = tick();
     if(b2) b2.textContent = tick();
@@ -403,7 +403,7 @@ return `
           name: r.name,
           pick3: (r.pick3 || []).map(Number),
           special: Number(r.special)
-        })).filter(r => r.name && r.pick3.length === 3 && valid1to8(r.special));
+        })).filter(r => r.name && r.pick3.length === 3 && valid1to9(r.special));
 
         showMsg(loadMsgEl, "ok", "載入成功");
         countInfoEl.textContent = `已載入 ${entries.length} 筆名單。`;
@@ -419,17 +419,17 @@ return `
         return;
       }
       const {d3, ds} = readDrawInputs();
-      if(d3.length !== 3 || d3.some(n=>!valid1to8(n))){
-        showMsg(calcMsgEl, "bad", "開獎三碼請輸入 3 個 1~8 的數字");
+      if(d3.length !== 3 || d3.some(n=>!valid1to9(n))){
+        showMsg(calcMsgEl, "bad", "開獎三碼請輸入 3 個 1~9 的數字");
         return;
       }
       // 一般開獎三碼不重複；若你要允許重複，把這段刪掉即可
       if(new Set(d3).size !== 3){
-        showMsg(calcMsgEl, "bad", "開獎三碼請勿重複（若你要允許重複我也可以幫你改）");
+        showMsg(calcMsgEl, "bad", "開獎三碼請勿重複");
         return;
       }
-      if(!valid1to8(ds)){
-        showMsg(calcMsgEl, "bad", "特別號請輸入 1~8");
+      if(!valid1to9(ds)){
+        showMsg(calcMsgEl, "bad", "特別號請輸入 1~9");
         return;
       }
 
@@ -511,7 +511,7 @@ return `
 	$("#draw").addEventListener("click", ()=>{
   // 隨機產生三碼（不重複）+ 特別號（可重複）
   const d3 = randomUnique3();
-  const ds = 1 + Math.floor(Math.random()*8);
+  const ds = 1 + Math.floor(Math.random()*9);
   setDrawInputs(d3, ds);
   runCalc(true); // 直接跑動畫 + 中獎名單
 });
@@ -527,6 +527,7 @@ return `
   </script>
 </body>
 </html>
+
 
 
 
