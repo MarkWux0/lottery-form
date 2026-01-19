@@ -210,7 +210,7 @@
           <label>三碼（選 3 個）</label>
           <div>
             <div class="nums" id="pick3"></div>
-            <div class="hint">規則：1～8 任選 3 碼，不重複、不看順序。</div>
+            <div class="hint">規則：1～9 任選 3 碼，不重複、不看順序。</div>
           </div>
         </div>
 
@@ -218,7 +218,7 @@
           <label>特別號（選 1 個）</label>
           <div>
             <div class="nums" id="pickS"></div>
-            <div class="hint">特別號是獨立選（1～7），可與三碼重複。</div>
+            <div class="hint">特別號是獨立選（1～9），可與三碼重複。</div>
           </div>
         </div>
 
@@ -240,7 +240,7 @@
       <div class="hd"><h2>活動說明</h2></div>
       <div class="bd">
         <p class="muted" style="margin-top:0">
-          參加方式：填姓名 → 選三碼（1～7）→ 選特別號（1～7，可與三碼重複）→ 送出。
+          參加方式：填姓名 → 選三碼（1～9）→ 選特別號（1～9，可與三碼重複）→ 送出。
         </p>
         <div style="border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff">
           <div style="font-weight:900;margin-bottom:6px">獎項</div>
@@ -384,7 +384,7 @@ async function postToApi(payloadObj) {
 
   // ====== 設定區（你可以改）======
   const NUM_MIN = 1;
-  const NUM_MAX = 8;
+  const NUM_MAX = 9;
   const PICK_THREE = 3;
   const STORAGE_KEY = "lucky_lotto_entries_v1";
   const ADMIN_PASSWORD = "1234"; // <- 改成你要的
@@ -662,6 +662,7 @@ function setSubmitEnabled(enabled){
 </script>
 </body>
 </html>
+
 
 
 
