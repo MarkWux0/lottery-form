@@ -292,11 +292,16 @@ function playDrawAnimationAndRender(finalNums, finalSpecial, winnersSnapshot, to
     if(bs) bs.textContent = tick();
   }, 80);
 
-  // 依序停球（更有「開獎感」）
-  setTimeout(()=>{ if(b1){ b1.textContent = String(finalNums[0]); b1.classList.remove('spin'); } }, 900);
-  setTimeout(()=>{ if(b2){ b2.textContent = String(finalNums[1]); b2.classList.remove('spin'); } }, 1500);
-  setTimeout(()=>{ if(b3){ b3.textContent = String(finalNums[2]); b3.classList.remove('spin'); } }, 2100);
-  setTimeout(()=>{ if(bs){ bs.textContent = String(finalSpecial); bs.classList.remove('spin'); } }, 2550);
+const safe = (fn) => {
+  if(token !== drawToken) return; // ✅ 舊動畫直接失效，不准改球
+  fn();
+};
+
+setTimeout(()=> safe(()=>{ if(b1){ b1.textContent = String(finalNums[0]); b1.classList.remove('spin'); } }), 900);
+setTimeout(()=> safe(()=>{ if(b2){ b2.textContent = String(finalNums[1]); b2.classList.remove('spin'); } }), 1500);
+setTimeout(()=> safe(()=>{ if(b3){ b3.textContent = String(finalNums[2]); b3.classList.remove('spin'); } }), 2100);
+setTimeout(()=> safe(()=>{ if(bs){ bs.textContent = String(finalSpecial); bs.classList.remove('spin'); } }), 2550);
+
 
   // 最後停止 timer、渲染結果、淡入（⚠️不再隱藏 stage，讓結果留在頁面）
   setTimeout(()=>{
@@ -495,11 +500,14 @@ return `
 const token = ++drawToken;
 
 if(withAnimation){
-  if(isAnimating) return; // 保險：動畫中不再進來
+  if(isAnimating) return;            // ✅ 第二次直接擋掉
+  isAnimating = true;                // ✅ 提早鎖
+  setDrawButtonsDisabled(true);      // ✅ 提早鎖按鈕
   playDrawAnimationAndRender(d3, ds, winnersSnapshot, token);
 } else {
   renderResults(winnersSnapshot);
 }
+
     }
 
     function exportWinners(){
@@ -554,6 +562,7 @@ if(withAnimation){
   </script>
 </body>
 </html>
+
 
 
 
