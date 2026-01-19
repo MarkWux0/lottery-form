@@ -204,6 +204,15 @@ details.prize-top table{
 
     let entries = [];        // 全部名單
     let winners = [];        // 中獎名單（算獎後）
+	let drawToken = 0;       // 每次開獎+1，避免動畫期間被覆蓋
+	let isAnimating = false; // 鎖按鈕
+
+function setDrawButtonsDisabled(disabled){
+  ["draw","calc","load","export","clearCache"].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
 
     function showMsg(el, type, text){
       el.className = "msg " + (type === "ok" ? "ok" : "bad");
@@ -255,7 +264,9 @@ function setDrawInputs(d3, ds){
       if(!specialHit && hit===1) return {name:"樂透普獎", amount:100,  key:"F"};
       return null;
     }
-function playDrawAnimationAndRender(finalNums, finalSpecial){
+function playDrawAnimationAndRender(finalNums, finalSpecial, winnersSnapshot, token){
+ isAnimating = true;
+ setDrawButtonsDisabled(true);
   // finalNums: [n1,n2,n3] 最終開獎三碼
   const stage = document.getElementById('drawStage');
   const rstage = document.getElementById('resultStage');
@@ -289,28 +300,40 @@ function playDrawAnimationAndRender(finalNums, finalSpecial){
 
   // 最後停止 timer、渲染結果、淡入（⚠️不再隱藏 stage，讓結果留在頁面）
   setTimeout(()=>{
-    clearInterval(timer);
+  clearInterval(timer);
 
-    if(label) label.textContent = '開獎結果';
+  if(label) label.textContent = '開獎結果';
 
-    renderResults();
+  // ✅ 如果期間又開獎過（token 變了），這次動畫就不要覆蓋結果
+  if(token !== drawToken){
+    isAnimating = false;
+    setDrawButtonsDisabled(false);
+    return;
+  }
 
-    if(rstage){
-      requestAnimationFrame(()=> rstage.classList.add('show'));
-    }
-  }, 2850);
+  // ✅ 用當次快照渲染，永遠對齊動畫數字
+  renderResults(winnersSnapshot);
+
+  if(rstage){
+    requestAnimationFrame(()=> rstage.classList.add('show'));
+  }
+
+  isAnimating = false;
+  setDrawButtonsDisabled(false);
+}, 2850);
 }
 
 
-function renderResults(){
-  if(!winners.length){
+function renderResults(winnersList){
+  const list = winnersList || [];
+  if(!list.length){
     tbodyEl.innerHTML = `<tr><td colspan="6" class="muted">本次無人中獎。</td></tr>`;
     return;
   }
 
   // 依獎項分組
   const groups = {};
-  for(const w of winners){
+  for(const w of list){
     if(!groups[w.prize]) groups[w.prize] = [];
     groups[w.prize].push(w);
   }
@@ -468,11 +491,15 @@ return `
       `;
 
       showMsg(calcMsgEl, "ok", "算獎完成");
-      if(withAnimation){
-    playDrawAnimationAndRender(d3, ds);
-  } else {
-    renderResults();
-  }
+  const winnersSnapshot = winners.slice();
+const token = ++drawToken;
+
+if(withAnimation){
+  if(isAnimating) return; // 保險：動畫中不再進來
+  playDrawAnimationAndRender(d3, ds, winnersSnapshot, token);
+} else {
+  renderResults(winnersSnapshot);
+}
     }
 
     function exportWinners(){
@@ -527,6 +554,7 @@ return `
   </script>
 </body>
 </html>
+
 
 
 
